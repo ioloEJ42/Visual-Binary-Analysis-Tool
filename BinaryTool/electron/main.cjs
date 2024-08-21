@@ -5,10 +5,12 @@ const crypto = require('crypto')
 
 function createWindow() {
   const win = new BrowserWindow({
-    width: 800,
-    height: 600,
+    width: 1200,
+    height: 800,
     webPreferences: {
-      preload: path.join(__dirname, 'preload.cjs')
+      preload: path.join(__dirname, 'preload.cjs'),
+      nodeIntegration: false,
+      contextIsolation: true
     }
   })
 
@@ -23,12 +25,16 @@ app.whenReady().then(() => {
   createWindow()
 
   app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow()
+    if (BrowserWindow.getAllWindows().length === 0) {
+      createWindow()
+    }
   })
 })
 
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') app.quit()
+  if (process.platform !== 'darwin') {
+    app.quit()
+  }
 })
 
 ipcMain.handle('open-file-dialog', async () => {
@@ -51,4 +57,17 @@ ipcMain.handle('generate-hashes', async (event, filePath) => {
   const sha1 = crypto.createHash('sha1').update(fileBuffer).digest('hex')
   const sha256 = crypto.createHash('sha256').update(fileBuffer).digest('hex')
   return { md5, sha1, sha256 }
+})
+
+ipcMain.handle('get-file-info', (event, filePath) => {
+  const stats = fs.statSync(filePath)
+  return {
+    name: path.basename(filePath),
+    size: stats.size,
+    lastModified: stats.mtime.toISOString()
+  }
+})
+
+ipcMain.handle('read-file', (event, filePath) => {
+  return fs.readFileSync(filePath)
 })

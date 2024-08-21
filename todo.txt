@@ -1,0 +1,15 @@
+Implement file selection and hash generation
+Create the basic three-column layout
+Implement binary visualization in the second column
+Create the hex/dec viewer for the third column
+Develop the control panel in the first column
+Implement the snapshot feature
+Add EXIF data extraction and display
+Create the top navigation bar
+Implement the right-side panel with external links and hash display
+Add color scheme customization
+Implement zoom and view toggle functionalities
+Create help documentation and changelog
+Optimize performance for large binary files
+Add error handling and user feedback
+Perform thorough testing and debugging

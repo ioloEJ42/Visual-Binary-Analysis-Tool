@@ -32,34 +32,41 @@ const getColor = (byte: number) => {
   }
 }
 
+const emit = defineEmits(['loading'])
+
 const drawBinary = async () => {
-  if (!canvas.value) return
+  emit('loading', true)
+  try {
+    if (!canvas.value) return
 
-  const ctx = canvas.value.getContext('2d')
-  if (!ctx) return
+    const ctx = canvas.value.getContext('2d')
+    if (!ctx) return
 
-  const fileBuffer = await window.electron.readFile(props.filePath)
+    const fileBuffer = await window.electron.readFile(props.filePath)
 
-  ctx.clearRect(0, 0, canvasWidth, canvasHeight)
+    ctx.clearRect(0, 0, canvasWidth, canvasHeight)
 
-  const bytesPerColumn = Math.ceil(fileBuffer.length / bytesPerRow.value)
-  const pixelSize =
-    Math.min(canvasWidth / bytesPerRow.value, canvasHeight / bytesPerColumn) * zoomLevel.value
+    const bytesPerColumn = Math.ceil(fileBuffer.length / bytesPerRow.value)
+    const pixelSize =
+      Math.min(canvasWidth / bytesPerRow.value, canvasHeight / bytesPerColumn) * zoomLevel.value
 
-  for (let i = 0; i < fileBuffer.length; i++) {
-    const x = (i % bytesPerRow.value) * pixelSize
-    const y = Math.floor(i / bytesPerRow.value) * pixelSize
-    ctx.fillStyle = getColor(fileBuffer[i])
-    ctx.fillRect(x, y, pixelSize, pixelSize)
-  }
+    for (let i = 0; i < fileBuffer.length; i++) {
+      const x = (i % bytesPerRow.value) * pixelSize
+      const y = Math.floor(i / bytesPerRow.value) * pixelSize
+      ctx.fillStyle = getColor(fileBuffer[i])
+      ctx.fillRect(x, y, pixelSize, pixelSize)
+    }
 
-  if (props.view === 'scan') {
-    ctx.strokeStyle = 'red'
-    ctx.lineWidth = 2
-    ctx.beginPath()
-    ctx.moveTo(0, scanLine.value * pixelSize)
-    ctx.lineTo(canvasWidth, scanLine.value * pixelSize)
-    ctx.stroke()
+    if (props.view === 'scan') {
+      ctx.strokeStyle = 'red'
+      ctx.lineWidth = 2
+      ctx.beginPath()
+      ctx.moveTo(0, scanLine.value * pixelSize)
+      ctx.lineTo(canvasWidth, scanLine.value * pixelSize)
+      ctx.stroke()
+    }
+  } finally {
+    emit('loading', false)
   }
 }
 

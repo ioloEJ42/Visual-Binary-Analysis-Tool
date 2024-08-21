@@ -1,8 +1,9 @@
 {
   "extends": "@vue/tsconfig/tsconfig.dom.json",
-  "include": ["env.d.ts", "src/**/*", "src/**/*.vue", "vite-electron-plugin.d.ts"],
+  "include": ["env.d.ts", "src/**/*", "src/**/*.vue"],
   "exclude": ["electron/**/*"],
   "compilerOptions": {
+    "composite": true,
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]

@@ -1,24 +1,22 @@
-<script setup lang="ts">
-import { RouterLink, RouterView } from 'vue-router'
-import HelloWorld from './components/HelloWorld.vue'
-</script>
-
 <template>
-  <header>
-    <img alt="Vue logo" class="logo" src="@/assets/logo.svg" width="125" height="125" />
-
-    <div class="wrapper">
-      <HelloWorld msg="You did it!" />
-
-      <nav>
-        <RouterLink to="/">Home</RouterLink>
-        <RouterLink to="/about">About</RouterLink>
-      </nav>
-    </div>
-  </header>
-
-  <RouterView />
+  <div>
+    <h1>Visual Binary Analysis Tool</h1>
+    <FileSelector @file-selected="onFileSelected" />
+    <MainLayout v-if="selectedFile" />
+  </div>
 </template>
+
+<script setup lang="ts">
+import { ref } from 'vue'
+import FileSelector from './components/FileSelector.vue'
+import MainLayout from './components/MainLayout.vue'
+
+const selectedFile = ref(null)
+
+const onFileSelected = (file) => {
+  selectedFile.value = file
+}
+</script>
 
 <style scoped>
 header {

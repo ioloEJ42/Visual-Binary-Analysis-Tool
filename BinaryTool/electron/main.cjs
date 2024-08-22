@@ -2,6 +2,7 @@ const { app, BrowserWindow, ipcMain, dialog } = require('electron')
 const path = require('path')
 const fs = require('fs')
 const crypto = require('crypto')
+const exifParser = require('exif-parser')
 
 function createWindow() {
   const win = new BrowserWindow({
@@ -70,4 +71,22 @@ ipcMain.handle('get-file-info', (event, filePath) => {
 
 ipcMain.handle('read-file', (event, filePath) => {
   return fs.readFileSync(filePath)
+})
+
+ipcMain.handle('read-exif-data', async (event, filePath) => {
+  try {
+    const buffer = fs.readFileSync(filePath)
+    const fileType = path.extname(filePath).toLowerCase()
+
+    if (fileType === '.jpg' || fileType === '.jpeg') {
+      const parser = exifParser.create(buffer)
+      const result = parser.parse()
+      return result.tags
+    } else {
+      return {} // Return empty object for non-JPEG files
+    }
+  } catch (error) {
+    console.error('Error reading EXIF data:', error)
+    return {} // Return empty object on error
+  }
 })

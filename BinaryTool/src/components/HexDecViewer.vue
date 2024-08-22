@@ -6,15 +6,21 @@
         <el-radio-button label="dec">Dec</el-radio-button>
       </el-radio-group>
     </div>
-    <div class="viewer" ref="viewer" @scroll="handleScroll">
-      <div :style="{ height: totalHeight + 'px' }">
-        <pre
-          v-for="(line, index) in visibleLines"
-          :key="index"
-          :style="{ position: 'absolute', top: (index + firstVisibleLine) * lineHeight + 'px' }"
-          >{{ line }}</pre
-        >
-      </div>
+    <div class="viewer" ref="viewer">
+      <table>
+        <tr>
+          <th>Offset</th>
+          <th>{{ viewMode.toUpperCase() }}</th>
+          <th>ASCII</th>
+          <th>EXIF</th>
+        </tr>
+        <tr v-for="(line, index) in visibleLines" :key="index">
+          <td class="offset">{{ line.offset }}</td>
+          <td class="hex-dec">{{ line.hexDec }}</td>
+          <td class="ascii">{{ line.ascii }}</td>
+          <td class="exif">{{ line.exif }}</td>
+        </tr>
+      </table>
     </div>
   </div>
 </template>
@@ -29,68 +35,48 @@ const props = defineProps<{
 
 const viewMode = ref('hex')
 const fileContent = ref<number[]>([])
-const viewer = ref<HTMLElement | null>(null)
-const firstVisibleLine = ref(0)
-const visibleLineCount = ref(0)
-const lineHeight = 20
-const chunkSize = 16
+const exifData = ref<Record<string, any>>({})
 
 const loadFileContent = async () => {
   fileContent.value = await window.electron.readFile(props.filePath)
+  exifData.value = await window.electron.readExifData(props.filePath)
 }
-
-const formatLine = (offset: number, chunk: number[]) => {
-  const hexValues = chunk.map((byte) => byte.toString(16).padStart(2, '0')).join(' ')
-  const decValues = chunk.map((byte) => byte.toString().padStart(3, ' ')).join(' ')
-  const asciiValues = chunk
-    .map((byte) => (byte >= 32 && byte <= 126 ? String.fromCharCode(byte) : '.'))
-    .join('')
-
-  return (
-    `${offset.toString(16).padStart(8, '0')}  ${viewMode.value === 'hex' ? hexValues : decValues}`.padEnd(
-      58
-    ) + ` |${asciiValues}|`
-  )
-}
-
-const totalLines = computed(() => Math.ceil(fileContent.value.length / chunkSize))
-const totalHeight = computed(() => totalLines.value * lineHeight)
 
 const visibleLines = computed(() => {
+  const chunkSize = 16
   const lines = []
-  for (
-    let i = firstVisibleLine.value;
-    i < firstVisibleLine.value + visibleLineCount.value && i < totalLines.value;
-    i++
-  ) {
-    const offset = i * chunkSize
-    const chunk = fileContent.value.slice(offset, offset + chunkSize)
-    lines.push(formatLine(offset, chunk))
+  for (let i = 0; i < fileContent.value.length; i += chunkSize) {
+    const chunk = fileContent.value.slice(i, i + chunkSize)
+    const offset = i.toString(16).padStart(8, '0')
+    const hexValues = chunk.map(byte => byte.toString(16).padStart(2, '0')).join(' ')
+    const decValues = chunk.map(byte => byte.toString().padStart(3, ' ')).join(' ')
+    const asciiValues = chunk.map(byte => (byte >= 32 && byte <= 126) ? String.fromCharCode(byte) : '.').join('')
+    const exifValue = getExifForOffset(i)
+    
+    lines.push({
+      offset,
+      hexDec: viewMode.value === 'hex' ? hexValues : decValues,
+      ascii: asciiValues,
+      exif: exifValue
+    })
   }
   return lines
 })
 
-const handleScroll = () => {
-  if (!viewer.value) return
-  firstVisibleLine.value = Math.floor(viewer.value.scrollTop / lineHeight)
-}
-
-const updateVisibleLineCount = () => {
-  if (!viewer.value) return
-  visibleLineCount.value = Math.ceil(viewer.value.clientHeight / lineHeight) + 1
+const getExifForOffset = (offset: number) => {
+  const exifEntries = Object.entries(exifData.value)
+  for (const [key, value] of exifEntries) {
+    if (typeof value === 'object' && 'start' in value && 'end' in value) {
+      if (offset >= value.start && offset < value.end) {
+        return `${key}: ${JSON.stringify(value)}`
+      }
+    }
+  }
+  return ''
 }
 
 watch(() => props.filePath, loadFileContent)
-watch(viewMode, () => {
-  if (viewer.value) viewer.value.scrollTop = 0
-  firstVisibleLine.value = 0
-})
-
-onMounted(() => {
-  loadFileContent()
-  updateVisibleLineCount()
-  window.addEventListener('resize', updateVisibleLineCount)
-})
+onMounted(loadFileContent)
 </script>
 
 <style scoped>
@@ -98,6 +84,8 @@ onMounted(() => {
   height: 100%;
   display: flex;
   flex-direction: column;
+  font-family: 'Inter', monospace;
+  font-size: 12px;
 }
 
 .controls {
@@ -107,9 +95,40 @@ onMounted(() => {
 .viewer {
   flex-grow: 1;
   overflow-y: auto;
+  overflow-x: auto;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+th, td {
+  padding: 4px 8px;
+  text-align: left;
+  border: 1px solid #ddd;
+}
+
+th {
+  background-color: #f2f2f2;
+  font-weight: 600;
+}
+
+.offset {
+  color: #888;
+}
+
+.hex-dec {
   font-family: monospace;
   white-space: pre;
-  font-size: 12px;
-  position: relative;
+}
+
+.ascii {
+  font-family: monospace;
+  color: #00f;
+}
+
+.exif {
+  color: #080;
 }
 </style>

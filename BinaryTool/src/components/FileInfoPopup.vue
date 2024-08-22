@@ -1,40 +1,38 @@
 <template>
-  <el-popover placement="bottom-end" :width="400" trigger="click">
-    <template #reference>
-      <el-button>File Info</el-button>
-    </template>
-    <div class="file-info-content">
+  <el-dialog :model-value="visible" @update:model-value="updateVisible" title="File Information" width="30%">
+    <div v-if="fileInfo">
       <h3>File Information</h3>
-      <p v-if="fileInfo"><strong>Name:</strong> {{ fileInfo.name }}</p>
-      <p v-if="fileInfo"><strong>Size:</strong> {{ formatFileSize(fileInfo.size) }}</p>
-      <p v-if="fileInfo"><strong>Last Modified:</strong> {{ formatDate(fileInfo.lastModified) }}</p>
-      <h3>Hashes</h3>
-      <p v-if="hashes"><strong>MD5:</strong> {{ hashes.md5 }}</p>
-      <p v-if="hashes"><strong>SHA1:</strong> {{ hashes.sha1 }}</p>
-      <p v-if="hashes"><strong>SHA256:</strong> {{ hashes.sha256 }}</p>
-      <h3>External Links</h3>
-      <el-button @click="openVirusTotal" size="small">VirusTotal</el-button>
-      <el-button @click="openMetaScan" size="small">MetaScan</el-button>
-      <el-button @click="openGoogle" size="small">Google</el-button>
+      <p><strong>Name:</strong> {{ fileInfo.name }}</p>
+      <p><strong>Size:</strong> {{ formatFileSize(fileInfo.size) }}</p>
+      <p><strong>Last Modified:</strong> {{ formatDate(fileInfo.lastModified) }}</p>
     </div>
-  </el-popover>
+    <div v-if="hashes">
+      <h3>Hashes</h3>
+      <p><strong>MD5:</strong> {{ hashes.md5 }}</p>
+      <p><strong>SHA1:</strong> {{ hashes.sha1 }}</p>
+      <p><strong>SHA256:</strong> {{ hashes.sha256 }}</p>
+    </div>
+    <h3>External Links</h3>
+    <el-button @click="openVirusTotal" :disabled="!hashes">VirusTotal</el-button>
+    <el-button @click="openMetaScan" :disabled="!hashes">MetaScan</el-button>
+    <el-button @click="openGoogle" :disabled="!fileInfo">Google</el-button>
+  </el-dialog>
 </template>
 
 <script setup lang="ts">
-import { ElPopover, ElButton } from 'element-plus'
+import { ElDialog, ElButton } from 'element-plus'
 
 const props = defineProps<{
-  fileInfo: {
-    name: string
-    size: number
-    lastModified: string
-  } | null
-  hashes: {
-    md5: string
-    sha1: string
-    sha256: string
-  } | null
+  fileInfo: any,
+  hashes: any,
+  visible: boolean
 }>()
+
+const emit = defineEmits(['update:visible'])
+
+const updateVisible = (value: boolean) => {
+  emit('update:visible', value)
+}
 
 const formatFileSize = (bytes: number) => {
   if (bytes === 0) return '0 Bytes'
@@ -56,19 +54,13 @@ const openVirusTotal = () => {
 
 const openMetaScan = () => {
   if (props.hashes) {
-    window.open(
-      `https://metadefender.opswat.com/results#!/file/${props.hashes.md5}/hash/overview`,
-      '_blank'
-    )
+    window.open(`https://metadefender.opswat.com/results#!/file/${props.hashes.md5}/hash/overview`, '_blank')
   }
 }
 
 const openGoogle = () => {
   if (props.fileInfo) {
-    window.open(
-      `https://www.google.com/search?q=${encodeURIComponent(props.fileInfo.name)}`,
-      '_blank'
-    )
+    window.open(`https://www.google.com/search?q=${encodeURIComponent(props.fileInfo.name)}`, '_blank')
   }
 }
 </script>

@@ -4,21 +4,30 @@
     <el-menu-item index="/about">About</el-menu-item>
     <el-menu-item index="/changelog">Changelog</el-menu-item>
     <el-menu-item index="/help">Help</el-menu-item>
-    <el-menu-item index="#" class="file-info-button">
-      <FileInfoPopup v-if="fileSelected" :fileInfo="fileInfo" :hashes="hashes" />
+    <el-menu-item index="#" class="file-info-button" @click="showFileInfo" v-if="fileSelected">
+      {{ fileInfoButtonText }}
     </el-menu-item>
   </el-menu>
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { ElMenu, ElMenuItem } from 'element-plus'
-import FileInfoPopup from './FileInfoPopup.vue'
 
-defineProps<{
-  fileSelected: boolean
-  fileInfo: any
-  hashes: any
+const props = defineProps<{
+  fileSelected: boolean,
+  fileName: string
 }>()
+
+const emit = defineEmits(['show-file-info'])
+
+const fileInfoButtonText = computed(() => {
+  return props.fileSelected ? `File Info - ${props.fileName}` : 'File Info'
+})
+
+const showFileInfo = () => {
+  emit('show-file-info')
+}
 </script>
 
 <style scoped>

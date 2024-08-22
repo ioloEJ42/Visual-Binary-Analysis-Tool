@@ -4,5 +4,6 @@ contextBridge.exposeInMainWorld('electron', {
   openFileDialog: () => ipcRenderer.invoke('open-file-dialog'),
   generateHashes: (filePath) => ipcRenderer.invoke('generate-hashes', filePath),
   getFileInfo: (filePath) => ipcRenderer.invoke('get-file-info', filePath),
-  readFile: (filePath) => ipcRenderer.invoke('read-file', filePath)
+  readFile: (filePath) => ipcRenderer.invoke('read-file', filePath),
+  readExifData: (filePath) => ipcRenderer.invoke('read-exif-data', filePath)
 })
